@@ -1,5 +1,7 @@
+// @ts-nocheck
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { API_URL } from "../../common/constants";
+import { getSessionToken } from '@shopify/app-bridge-utils';
 
 export class BaseApiService {
   private readonly baseUrl = API_URL;
@@ -15,10 +17,19 @@ export class BaseApiService {
       baseURL: this.baseUrl,
     };
 
-    this.axiosInstance = axios.create(this.config);
+	this.axiosInstance = axios.create(this.config)
 
-    // auth token
-    this.axiosInstance.defaults.headers.common["Authorization"] = "";
+	// auth token
+	this.axiosInstance.interceptors.request.use(function (config : any) {
+		   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		  // @ts-ignore
+	  return getSessionToken(window.shopifyApp) // requires a Shopify App Bridge instance
+		  .then((token) => {
+			  // Append your request headers with an authenticated token
+			  config.headers.Authorization = `Bearer ${token}`
+			  return config
+		  })
+	})
   }
 
   public getUrl(id = ""): string {
